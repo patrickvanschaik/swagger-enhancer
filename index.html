@@ -4,13 +4,8 @@
   <meta charset="utf-8" />
   <title>Swagger Enhancer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Tailwind v4 Play CDN (development/prototyping) -->
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-
-  <!-- Ace editor CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.3/ace.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
-  <!-- Thema tokens (Enexis huisstijl) -->
   <style type="text/tailwindcss">
     @theme {
       --color-enexis-pink: #DE0073;
@@ -27,7 +22,6 @@
       --shadow-card: 0 2px 6px rgba(0, 0, 0, 0.06),
         0 1px 2px rgba(0, 0, 0, 0.12);
     }
-
     .panel {
       @apply border rounded-[var(--radius-card)] bg-[var(--color-bg)] shadow-[var(--shadow-card)] border-[var(--color-border)];
     }
@@ -40,11 +34,9 @@
     .panel-content {
       @apply p-4;
     }
-
     .btn {
       @apply inline-flex items-center justify-center gap-2 h-10 px-4 rounded-md text-sm font-semibold transition
-        focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring-pink)/0.35)]
-        disabled:opacity-60 disabled:pointer-events-none;
+        focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring-pink)/0.35)];
       cursor: pointer;
     }
     .btn-primary {
@@ -63,13 +55,10 @@
         focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring-pink)/0.35)];
       cursor: pointer;
     }
-
     .file-info,
-    .status,
     .footnote {
       @apply text-sm text-[var(--color-muted-fg)];
     }
-
     .upload-area {
       @apply border-2 border-dashed border-[var(--color-border)] rounded-[var(--radius-card)] bg-[var(--color-muted)] p-4 text-center transition;
       cursor: default;
@@ -81,14 +70,22 @@
       @apply hidden;
     }
 
+    /* Fix voor Modals in Tailwind v4 */
     .modal-backdrop {
       @apply fixed inset-0 bg-black/40 z-40 hidden;
     }
-    .modal {
-      @apply fixed inset-0 z-50 hidden;
+    .modal-backdrop.active {
+      @apply block;
     }
+    .modal {
+      @apply fixed inset-0 z-50 hidden items-start justify-center pt-24;
+    }
+    .modal.active {
+      @apply flex;
+    }
+
     .modal-content {
-      @apply bg-white rounded-[var(--radius-card)] shadow-[var(--shadow-card)] max-w-2xl mx-auto mt-24 p-6;
+      @apply bg-white rounded-[var(--radius-card)] shadow-[var(--shadow-card)] max-w-2xl w-full mx-4 p-6;
     }
     .modal-title {
       @apply text-xl font-semibold text-[var(--color-enexis-pink)] mb-2;
@@ -96,7 +93,6 @@
     .modal-body {
       @apply text-[var(--color-fg)] space-y-2;
     }
-
     .op-container {
       @apply space-y-4;
     }
@@ -133,16 +129,21 @@
     .checkbox-row {
       @apply flex items-center gap-2 text-sm;
     }
-
     #editor {
       height: 18rem;
       @apply w-full border rounded-md bg-white text-sm;
+    }
+    /* Pijl animatie */
+    .toggle-icon {
+      @apply transition-transform duration-200;
+    }
+    .toggle-icon.rotated {
+      @apply rotate-90;
     }
   </style>
 </head>
 <body class="min-h-dvh bg-[var(--color-bg)] text-[var(--color-fg)] font-[var(--font-sans)]">
   <main class="max-w-[1040px] mx-auto p-7 space-y-6">
-    <!-- Header -->
     <header class="flex items-center justify-between gap-4 mb-3">
       <div>
         <h1 class="text-2xl font-semibold text-[var(--color-enexis-pink)] m-0">
@@ -158,10 +159,8 @@
         ?
       </button>
     </header>
-
     <div class="h-1.5 rounded bg-gradient-to-r from-[var(--color-enexis-pink)] to-[var(--color-enexis-green)]"></div>
 
-    <!-- Stap 1 -->
     <section class="panel mt-4" aria-labelledby="step1-title">
       <div class="panel-header">
         <h2 id="step1-title" class="panel-title">
@@ -169,9 +168,9 @@
         </h2>
       </div>
       <div class="panel-content">
-        <label for="fileInput" class="font-medium mb-2 block"
-          >Kies of sleep een Swagger-bestand (JSON)</label
-        >
+        <label for="fileInput" class="font-medium mb-2 block">
+          Kies of sleep een Swagger-bestand (JSON)
+        </label>
         <div id="uploadArea" class="upload-area">
           <p class="mb-2">
             Sleep je bestand hierheen of klik op “Bestand kiezen”.
@@ -187,11 +186,9 @@
           />
         </div>
         <div id="fileInfo" class="file-info mt-2"></div>
-        <div id="status" class="status mt-1"></div>
       </div>
     </section>
 
-    <!-- Stap 2 -->
     <section class="panel" aria-labelledby="step2-title">
       <div class="panel-header">
         <h2 id="step2-title" class="panel-title">
@@ -199,59 +196,46 @@
         </h2>
       </div>
       <div class="panel-content">
-        <p class="status mb-3">
+        <p class="footnote mb-3">
           Per operation kun je aangeven welke HTTP‑statuscodes aanwezig moeten zijn.
-          Bestaande codes worden automatisch aangevinkt op basis van de huidige Swagger.
         </p>
         <div id="operationsContainer" class="op-container">
-          <!-- Dynamisch gevuld -->
-        </div>
-        <p class="status mt-3">
+          </div>
+        <p class="footnote mt-3">
           Tip: klik op de header van een operation om de statuscode‑instellingen te tonen of te verbergen.
         </p>
       </div>
     </section>
 
-    <!-- Stap 3 -->
     <section class="panel" aria-labelledby="step3-title">
       <div class="panel-header">
         <h2 id="step3-title" class="panel-title">
-          Stap 3: Bijwerken, bewerken en downloaden
+          Stap 3: Bewerken en downloaden
         </h2>
       </div>
       <div class="panel-content space-y-3">
         <div class="flex flex-wrap gap-3">
-          <button id="enhanceBtn" class="btn btn-primary" disabled>
-            Swagger bijwerken
+          <button id="downloadBtn" class="btn btn-accent">
+            Download Swagger
           </button>
-          <button id="downloadBtn" class="btn btn-accent" disabled>
-            Download bijgewerkte Swagger
-          </button>
-          <button id="resetBtn" class="btn btn-outline">Reset</button>
         </div>
-        <p class="status">
-          De preview hieronder is bewerkbaar. Wijzigingen in deze editor worden
-          gebruikt bij het opnieuw verrijken en bij de download.
-        </p>
-        <label for="editor" class="font-medium mt-1 block"
-          >Preview (JSON)</label
-        >
-        <div id="editor"></div>
         <p class="footnote">
-          Let op: de Tailwind Play CDN is bedoeld voor ontwikkeling en
-          prototyping. Voor productie: bouw een geoptimaliseerde Tailwind CSS
-          met alleen benodigde classes (JIT/purge) om performance te
-          verbeteren.
+          De preview hieronder is bewerkbaar. Na elke wijziging in de
+          statuscode‑vinkjes wordt de Swagger direct bijgewerkt in deze editor.
+          Handmatige wijzigingen in de editor worden gebruikt voor de download.
         </p>
+        <label for="editor" class="font-medium mt-1 block">
+          Preview (JSON)
+        </label>
+        <div id="editor"></div>
       </div>
     </section>
   </main>
 
-  <!-- Help/Info Modal -->
-  <div id="modalBackdrop" class="modal-backdrop hidden"></div>
+  <div id="modalBackdrop" class="modal-backdrop"></div>
   <div
     id="helpModal"
-    class="modal hidden"
+    class="modal"
     role="dialog"
     aria-modal="true"
     aria-labelledby="helpTitle"
@@ -264,26 +248,38 @@
           geselecteerde HTTP‑statuscodes aan een Mendix Swagger (OpenAPI 2.0).
         </p>
         <ol class="list-decimal pl-5 space-y-1">
+          <li>Upload je Swagger‑bestand (JSON).</li>
+          <li>Pas per operation de gewenste HTTP‑statuscodes aan.</li>
           <li>
-            Upload je Swagger‑bestand (JSON) via “Bestand kiezen” of sleep het
-            in de dropzone.
-          </li>
-          <li>
-            Voor elke operation zie je welke statuscodes nu aanwezig zijn; pas
-            deze per operation aan via de vinkjes.
-          </li>
-          <li>
-            Klik “Swagger bijwerken”; de preview (Ace editor) wordt bijgewerkt
-            met de nieuwe Swagger.
-          </li>
-          <li>
-            Je kunt de JSON in de preview handmatig bewerken; bij opnieuw
-            verrijken en bij download wordt de aangepaste versie gebruikt.
+            Controleer of de JSON in de preview geldig is en klik daarna op
+            “Download Swagger”.
           </li>
         </ol>
       </div>
       <div class="mt-4 flex gap-2 justify-end">
         <button id="closeModalBtn" class="btn btn-primary" type="button">
+          Sluiten
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="errorBackdrop" class="modal-backdrop"></div>
+  <div
+    id="errorModal"
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="errorTitle"
+  >
+    <div class="modal-content">
+      <h3 id="errorTitle" class="modal-title">Fout in JSON</h3>
+      <div class="modal-body">
+        <p>De JSON is ongeldig. Details:</p>
+        <pre id="errorMessage" class="text-xs bg-[var(--color-muted)] p-2 rounded border border-[var(--color-border)] whitespace-pre-wrap"></pre>
+      </div>
+      <div class="mt-4 flex gap-2 justify-end">
+        <button id="closeErrorBtn" class="btn btn-primary" type="button">
           Sluiten
         </button>
       </div>
@@ -325,7 +321,6 @@
       },
     };
 
-    // Response templates
     const responseTemplates = {
       200: { description: "successful operation", schema: { type: "object" } },
       201: {
@@ -415,18 +410,12 @@
       },
     };
 
-    let originalSwagger = null;
-    let enhancedSwagger = null;
-
     const fileInput   = document.getElementById("fileInput");
     const fileInfo    = document.getElementById("fileInfo");
-    const enhanceBtn  = document.getElementById("enhanceBtn");
     const downloadBtn = document.getElementById("downloadBtn");
-    const resetBtn    = document.getElementById("resetBtn");
-    const statusEl    = document.getElementById("status");
     const operationsContainer = document.getElementById("operationsContainer");
 
-    // Ace editor initialiseren
+    // Ace editor
     const editor = ace.edit("editor");
     editor.setTheme("ace/theme/textmate");
     editor.session.setMode("ace/mode/json");
@@ -436,29 +425,55 @@
     editor.setOption("useSoftTabs", true);
 
     // Help modal
-    const helpBtn        = document.getElementById("helpBtn");
-    const helpModal      = document.getElementById("helpModal");
-    const modalBackdrop  = document.getElementById("modalBackdrop");
-    const closeModalBtn  = document.getElementById("closeModalBtn");
+    const helpBtn       = document.getElementById("helpBtn");
+    const helpModal     = document.getElementById("helpModal");
+    const modalBackdrop = document.getElementById("modalBackdrop");
+    const closeModalBtn = document.getElementById("closeModalBtn");
 
-    function openModal() {
-      helpModal.classList.remove("hidden");
-      modalBackdrop.classList.remove("hidden");
+    function openHelpModal() {
+      helpModal.classList.add("active");
+      modalBackdrop.classList.add("active");
     }
-    function closeModal() {
-      helpModal.classList.add("hidden");
-      modalBackdrop.classList.add("hidden");
+    function closeHelpModal() {
+      helpModal.classList.remove("active");
+      modalBackdrop.classList.remove("active");
     }
-    helpBtn.addEventListener("click", openModal);
-    modalBackdrop.addEventListener("click", closeModal);
-    closeModalBtn?.addEventListener("click", closeModal);
+    helpBtn.addEventListener("click", openHelpModal);
+    modalBackdrop.addEventListener("click", closeHelpModal);
+    closeModalBtn?.addEventListener("click", closeHelpModal);
+
+    // Error modal
+    const errorBackdrop = document.getElementById("errorBackdrop");
+    const errorModal    = document.getElementById("errorModal");
+    const errorMessage  = document.getElementById("errorMessage");
+    const closeErrorBtn = document.getElementById("closeErrorBtn");
+
+    function showErrorModal(message) {
+      errorMessage.textContent = message;
+      errorModal.classList.add("active");
+      errorBackdrop.classList.add("active");
+    }
+
+    function closeErrorModal() {
+      errorModal.classList.remove("active");
+      errorBackdrop.classList.remove("active");
+    }
+
+    errorBackdrop.addEventListener("click", closeErrorModal);
+    closeErrorBtn?.addEventListener("click", closeErrorModal);
+
+    // ESC sluit modals
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeModal();
+      if (e.key === "Escape") {
+        closeHelpModal();
+        closeErrorModal();
+      }
     });
 
-    // Upload UX: klik-knop + drag & drop
+    // Upload UX
     const uploadArea = document.getElementById("uploadArea");
     const browseBtn  = document.getElementById("browseBtn");
+
     browseBtn.addEventListener("click", () => fileInput.click());
 
     ["dragenter", "dragover"].forEach((evt) => {
@@ -492,113 +507,6 @@
       if (m === "patch")  return "op-method op-method-patch";
       if (m === "delete") return "op-method op-method-delete";
       return "op-method op-method-other";
-    }
-
-    function buildOperationsUI(swaggerJson) {
-      operationsContainer.innerHTML = "";
-      if (!swaggerJson.paths) {
-        operationsContainer.innerHTML =
-          '<p class="status">Geen paths gevonden in deze Swagger.</p>';
-        return;
-      }
-
-      const methods = ["get", "post", "put", "patch", "delete", "options", "head"];
-
-      Object.entries(swaggerJson.paths).forEach(([path, pathItem]) => {
-        methods.forEach((method) => {
-          const op = pathItem[method];
-          if (!op) return;
-
-          const opKey = `${method.toUpperCase()} ${path}`;
-          const responses = (op.responses && Object.keys(op.responses)) || [];
-
-          const opCard = document.createElement("div");
-          opCard.className = "op-card";
-
-          const header = document.createElement("div");
-          header.className = "op-header";
-
-          const left = document.createElement("div");
-          left.className = "flex flex-col gap-1";
-
-          const titleRow = document.createElement("div");
-          titleRow.className = "flex items-center gap-2";
-          const methodBadge = document.createElement("span");
-          methodBadge.className = methodClass(method);
-          methodBadge.textContent = method.toUpperCase();
-          const opTitle = document.createElement("span");
-          opTitle.className = "op-title";
-          opTitle.textContent = path;
-
-          titleRow.appendChild(methodBadge);
-          titleRow.appendChild(opTitle);
-
-          const opPath = document.createElement("div");
-          opPath.className = "op-path";
-          opPath.textContent = op.summary || op.description || "";
-
-          left.appendChild(titleRow);
-          if (opPath.textContent) left.appendChild(opPath);
-
-          const toggleIcon = document.createElement("span");
-          toggleIcon.className = "text-xs text-[var(--color-muted-fg)]";
-          toggleIcon.textContent = "▶";
-
-          header.appendChild(left);
-          header.appendChild(toggleIcon);
-
-          const body = document.createElement("div");
-          body.className = "op-body";
-          body.dataset.opKey = opKey;
-
-          const codesGrid = document.createElement("div");
-          codesGrid.className = "op-codes-grid";
-
-          const allCodes = ["200","201","204","400","401","403","404","422","500","503"];
-
-          allCodes.forEach((code) => {
-            const row = document.createElement("div");
-            row.className = "checkbox-row";
-
-            const input = document.createElement("input");
-            input.type = "checkbox";
-            input.className = "op-code-checkbox accent-[var(--color-enexis-pink)]";
-            input.dataset.opKey = opKey;
-            input.value = code;
-
-            if (responses.includes(code)) {
-              input.checked = true;
-            }
-
-            const label = document.createElement("label");
-            label.textContent = code;
-
-            row.appendChild(input);
-            row.appendChild(label);
-
-            codesGrid.appendChild(row);
-          });
-
-          body.appendChild(codesGrid);
-
-          header.addEventListener("click", () => {
-            const visible = body.classList.contains("visible");
-            document
-              .querySelectorAll(".op-body.visible")
-              .forEach((el) => el.classList.remove("visible"));
-            if (!visible) body.classList.add("visible");
-          });
-
-          opCard.appendChild(header);
-          opCard.appendChild(body);
-          operationsContainer.appendChild(opCard);
-        });
-      });
-
-      if (!operationsContainer.children.length) {
-        operationsContainer.innerHTML =
-          '<p class="status">Geen operations gevonden in deze Swagger.</p>';
-      }
     }
 
     function getSelectedCodesForOperation(opKey) {
@@ -670,64 +578,170 @@
       return out;
     }
 
+    function buildOperationsUI(swaggerJson) {
+      operationsContainer.innerHTML = "";
+      if (!swaggerJson.paths) {
+        operationsContainer.innerHTML =
+          '<p class="footnote">Geen paths gevonden in deze Swagger.</p>';
+        return;
+      }
+
+      const methods = ["get", "post", "put", "patch", "delete", "options", "head"];
+
+      Object.entries(swaggerJson.paths).forEach(([path, pathItem]) => {
+        methods.forEach((method) => {
+          const op = pathItem[method];
+          if (!op) return;
+
+          const opKey = `${method.toUpperCase()} ${path}`;
+          const responses = (op.responses && Object.keys(op.responses)) || [];
+
+          const opCard = document.createElement("div");
+          opCard.className = "op-card";
+
+          const header = document.createElement("div");
+          header.className = "op-header";
+
+          const left = document.createElement("div");
+          left.className = "flex flex-col gap-1";
+
+          const titleRow = document.createElement("div");
+          titleRow.className = "flex items-center gap-2";
+          const methodBadge = document.createElement("span");
+          methodBadge.className = methodClass(method);
+          methodBadge.textContent = method.toUpperCase();
+          const opTitle = document.createElement("span");
+          opTitle.className = "op-title";
+          opTitle.textContent = path;
+
+          titleRow.appendChild(methodBadge);
+          titleRow.appendChild(opTitle);
+
+          const opPathInfo = document.createElement("div");
+          opPathInfo.className = "op-path";
+          opPathInfo.textContent = op.summary || op.description || "";
+
+          left.appendChild(titleRow);
+          if (opPathInfo.textContent) left.appendChild(opPathInfo);
+
+          const toggleIcon = document.createElement("span");
+          toggleIcon.className = "toggle-icon text-xs text-[var(--color-muted-fg)]";
+          toggleIcon.textContent = "▶";
+
+          header.appendChild(left);
+          header.appendChild(toggleIcon);
+
+          const body = document.createElement("div");
+          body.className = "op-body";
+          body.dataset.opKey = opKey;
+
+          const codesGrid = document.createElement("div");
+          codesGrid.className = "op-codes-grid";
+
+          const allCodes = ["200","201","204","400","401","403","404","422","500","503"];
+
+          allCodes.forEach((code) => {
+            const row = document.createElement("div");
+            row.className = "checkbox-row";
+
+            const input = document.createElement("input");
+            input.type = "checkbox";
+            input.className = "op-code-checkbox accent-[var(--color-enexis-pink)]";
+            input.dataset.opKey = opKey;
+            input.value = code;
+
+            if (responses.includes(code)) {
+              input.checked = true;
+            }
+
+            const label = document.createElement("label");
+            label.textContent = code;
+
+            row.appendChild(input);
+            row.appendChild(label);
+
+            codesGrid.appendChild(row);
+          });
+
+          body.appendChild(codesGrid);
+
+          header.addEventListener("click", () => {
+            const visible = body.classList.contains("visible");
+            
+            // Sluit andere open items en reset pijltjes
+            document.querySelectorAll(".op-body.visible").forEach((el) => {
+                if(el !== body) {
+                    el.classList.remove("visible");
+                    el.previousElementSibling.querySelector(".toggle-icon").classList.remove("rotated");
+                }
+            });
+
+            // Toggle huidige item
+            if (!visible) {
+              body.classList.add("visible");
+              toggleIcon.classList.add("rotated");
+              // Scroll in editor naar het path
+              editor.find(`"${path}"`);
+            } else {
+              body.classList.remove("visible");
+              toggleIcon.classList.remove("rotated");
+            }
+          });
+
+          // Automatisch verrijken bij wijziging
+          body.addEventListener("change", (ev) => {
+            if (ev.target && ev.target.classList.contains("op-code-checkbox")) {
+              try {
+                const currentJson = JSON.parse(editor.getValue());
+                const newSwagger  = enhanceSwagger(currentJson);
+                editor.setValue(JSON.stringify(newSwagger, null, 2), -1);
+                
+                // Opnieuw focussen op het gewijzigde deel
+                editor.find(`"${path}"`);
+              } catch (err) {
+                showErrorModal("Fout bij verwerken van JSON:\n\n" + (err.message || String(err)));
+              }
+            }
+          });
+
+          opCard.appendChild(header);
+          opCard.appendChild(body);
+          operationsContainer.appendChild(opCard);
+        });
+      });
+
+      if (!operationsContainer.children.length) {
+        operationsContainer.innerHTML =
+          '<p class="footnote">Geen operations gevonden in deze Swagger.</p>';
+      }
+    }
+
+    // Bestandsupload
     fileInput.addEventListener("change", async (e) => {
       const file = e.target.files[0];
-      enhancedSwagger = null;
-      statusEl.textContent = "";
       operationsContainer.innerHTML = "";
       editor.setValue("// Preview van Swagger verschijnt hier na upload...", -1);
 
       if (!file) {
         fileInfo.textContent = "Geen bestand geselecteerd.";
-        enhanceBtn.disabled = true;
-        downloadBtn.disabled = true;
         return;
       }
-      fileInfo.textContent = `Geselecteerd: ${file.name} (${
-        file.type || "onbekend type"
-      })`;
+      fileInfo.textContent = `Geselecteerd: ${file.name} (${file.type || "onbekend type"})`;
 
       try {
         const text = await file.text();
         const json = JSON.parse(text);
-
         if (!json.swagger || json.swagger !== "2.0") {
-          statusEl.textContent =
-            "Let op: Dit lijkt geen Swagger 2.0 (OpenAPI 2.0) bestand te zijn.";
-        } else {
-          statusEl.textContent = "Swagger 2.0 gedetecteerd.";
+          showErrorModal('Dit bestand bevat geen geldige Swagger 2.0 (verwacht `"swagger": "2.0"`).');
         }
-
-        originalSwagger = json;
         buildOperationsUI(json);
         editor.setValue(JSON.stringify(json, null, 2), -1);
-
-        enhanceBtn.disabled = false;
-        downloadBtn.disabled = true;
       } catch (err) {
-        originalSwagger = null;
-        statusEl.textContent =
-          "Kon het JSON-bestand niet parsen. Controleer of het geldige JSON is.";
-        enhanceBtn.disabled = true;
-        downloadBtn.disabled = true;
+        showErrorModal("Kon het JSON-bestand niet parsen:\n\n" + (err.message || String(err)));
       }
     });
 
-    enhanceBtn.addEventListener("click", () => {
-      try {
-        const currentJson = JSON.parse(editor.getValue());
-        enhancedSwagger = enhanceSwagger(currentJson);
-        editor.setValue(JSON.stringify(enhancedSwagger, null, 2), -1);
-        statusEl.textContent =
-          "Swagger succesvol bijgewerkt. Controleer de preview en download indien akkoord.";
-        downloadBtn.disabled = false;
-      } catch {
-        statusEl.textContent =
-          "Fout bij verwerken: JSON in de preview is ongeldig.";
-        downloadBtn.disabled = true;
-      }
-    });
-
+    // Download
     downloadBtn.addEventListener("click", () => {
       try {
         const jsonToDownload = JSON.parse(editor.getValue());
@@ -746,22 +760,9 @@
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-      } catch {
-        statusEl.textContent =
-          "Download mislukt: JSON in de preview is ongeldig.";
+      } catch (err) {
+        showErrorModal("Download mislukt, JSON is ongeldig:\n\n" + (err.message || String(err)));
       }
-    });
-
-    resetBtn.addEventListener("click", () => {
-      originalSwagger = null;
-      enhancedSwagger = null;
-      fileInput.value = "";
-      fileInfo.textContent = "";
-      statusEl.textContent = "";
-      enhanceBtn.disabled = true;
-      downloadBtn.disabled = true;
-      operationsContainer.innerHTML = "";
-      editor.setValue("// Preview van Swagger verschijnt hier na upload...", -1);
     });
   </script>
 </body>
