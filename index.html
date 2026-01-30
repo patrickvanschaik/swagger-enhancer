@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Swagger Enhancer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Tailwind v4 Play CDN (development/prototyping) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+  <!-- Ace editor CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.3/ace.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+  <!-- Thema tokens (Enexis huisstijl) -->
+  <style type="text/tailwindcss">
+    @theme {
+      --color-enexis-pink: #DE0073;
+      --color-enexis-green: #BDDB00;
+      --color-bg: #ffffff;
+      --color-fg: #232323;
+      --color-muted: #f5f6f8;
+      --color-muted-fg: #555555;
+      --color-border: #e2e5ea;
+      --ring-pink: 222 0 115;
+      --font-sans: "Inter", system-ui, -apple-system, Segoe UI, Roboto,
+        "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+      --radius-card: 0.625rem;
+      --shadow-card: 0 2px 6px rgba(0, 0, 0, 0.06),
+        0 1px 2px rgba(0, 0, 0, 0.12);
+    }
+
+    .panel {
+      @apply border rounded-[var(--radius-card)] bg-[var(--color-bg)] shadow-[var(--shadow-card)] border-[var(--color-border)];
+    }
+    .panel-header {
+      @apply px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-muted)];
+    }
+    .panel-title {
+      @apply text-lg font-semibold text-[var(--color-enexis-pink)];
+    }
+    .panel-content {
+      @apply p-4;
+    }
+
+    .btn {
+      @apply inline-flex items-center justify-center gap-2 h-10 px-4 rounded-md text-sm font-semibold transition
+        focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring-pink)/0.35)]
+        disabled:opacity-60 disabled:pointer-events-none;
+      cursor: pointer;
+    }
+    .btn-primary {
+      @apply bg-[var(--color-enexis-pink)] text-white hover:brightness-95;
+    }
+    .btn-accent {
+      @apply bg-[var(--color-enexis-green)] text-[#1f1f1f] hover:brightness-95;
+    }
+    .btn-outline {
+      @apply bg-transparent border border-[var(--color-border)] text-[var(--color-fg)] hover:bg-[var(--color-muted)];
+    }
+    .btn-icon {
+      @apply inline-flex items-center justify-center rounded-full w-9 h-9 border border-[var(--color-border)]
+        bg-[var(--color-muted)] text-[var(--color-enexis-pink)] text-base
+        hover:bg-[var(--color-enexis-pink)] hover:text-white transition
+        focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring-pink)/0.35)];
+      cursor: pointer;
+    }
+
+    .file-info,
+    .status,
+    .footnote {
+      @apply text-sm text-[var(--color-muted-fg)];
+    }
+
+    .upload-area {
+      @apply border-2 border-dashed border-[var(--color-border)] rounded-[var(--radius-card)] bg-[var(--color-muted)] p-4 text-center transition;
+      cursor: default;
+    }
+    .upload-area:hover {
+      @apply border-[var(--color-enexis-pink)];
+    }
+    .hidden-input {
+      @apply hidden;
+    }
+
+    .modal-backdrop {
+      @apply fixed inset-0 bg-black/40 z-40 hidden;
+    }
+    .modal {
+      @apply fixed inset-0 z-50 hidden;
+    }
+    .modal-content {
+      @apply bg-white rounded-[var(--radius-card)] shadow-[var(--shadow-card)] max-w-2xl mx-auto mt-24 p-6;
+    }
+    .modal-title {
+      @apply text-xl font-semibold text-[var(--color-enexis-pink)] mb-2;
+    }
+    .modal-body {
+      @apply text-[var(--color-fg)] space-y-2;
+    }
+
+    .op-container {
+      @apply space-y-4;
+    }
+    .op-card {
+      @apply border border-[var(--color-border)] rounded-md p-3 bg-white;
+    }
+    .op-header {
+      @apply flex items-center justify-between gap-2 cursor-pointer;
+    }
+    .op-title {
+      @apply font-semibold text-sm;
+    }
+    .op-method {
+      @apply inline-flex items-center justify-center px-2 py-0.5 rounded text-xs font-semibold text-white;
+    }
+    .op-method-get    { @apply bg-emerald-600; }
+    .op-method-post   { @apply bg-blue-600; }
+    .op-method-put    { @apply bg-amber-600; }
+    .op-method-patch  { @apply bg-indigo-600; }
+    .op-method-delete { @apply bg-rose-600; }
+    .op-method-other  { @apply bg-slate-600; }
+    .op-path {
+      @apply text-xs text-[var(--color-muted-fg)] break-all;
+    }
+    .op-body {
+      @apply mt-3 border-t border-[var(--color-border)] pt-2 hidden;
+    }
+    .op-body.visible {
+      @apply block;
+    }
+    .op-codes-grid {
+      @apply grid grid-cols-2 md:grid-cols-5 gap-2;
+    }
+    .checkbox-row {
+      @apply flex items-center gap-2 text-sm;
+    }
+
+    #editor {
+      height: 18rem;
+      @apply w-full border rounded-md bg-white text-sm;
+    }
+  </style>
+</head>
+<body class="min-h-dvh bg-[var(--color-bg)] text-[var(--color-fg)] font-[var(--font-sans)]">
+  <main class="max-w-[1040px] mx-auto p-7 space-y-6">
+    <!-- Header -->
+    <header class="flex items-center justify-between gap-4 mb-3">
+      <div>
+        <h1 class="text-2xl font-semibold text-[var(--color-enexis-pink)] m-0">
+          Swagger Enhancer
+        </h1>
+      </div>
+      <button
+        id="helpBtn"
+        class="btn-icon"
+        aria-label="Info en hulp"
+        type="button"
+      >
+        ?
+      </button>
+    </header>
+
+    <div class="h-1.5 rounded bg-gradient-to-r from-[var(--color-enexis-pink)] to-[var(--color-enexis-green)]"></div>
+
+    <!-- Stap 1 -->
+    <section class="panel mt-4" aria-labelledby="step1-title">
+      <div class="panel-header">
+        <h2 id="step1-title" class="panel-title">
+          Stap 1: Upload Swagger (JSON)
+        </h2>
+      </div>
+      <div class="panel-content">
+        <label for="fileInput" class="font-medium mb-2 block"
+          >Kies of sleep een Swagger-bestand (JSON)</label
+        >
+        <div id="uploadArea" class="upload-area">
+          <p class="mb-2">
+            Sleep je bestand hierheen of klik op “Bestand kiezen”.
+          </p>
+          <button id="browseBtn" class="btn btn-primary" type="button">
+            Bestand kiezen
+          </button>
+          <input
+            type="file"
+            id="fileInput"
+            accept=".json,application/json"
+            class="hidden-input"
+          />
+        </div>
+        <div id="fileInfo" class="file-info mt-2"></div>
+        <div id="status" class="status mt-1"></div>
+      </div>
+    </section>
+
+    <!-- Stap 2 -->
+    <section class="panel" aria-labelledby="step2-title">
+      <div class="panel-header">
+        <h2 id="step2-title" class="panel-title">
+          Stap 2: Statuscodes per operation
+        </h2>
+      </div>
+      <div class="panel-content">
+        <p class="status mb-3">
+          Per operation kun je aangeven welke HTTP‑statuscodes aanwezig moeten zijn.
+          Bestaande codes worden automatisch aangevinkt op basis van de huidige Swagger.
+        </p>
+        <div id="operationsContainer" class="op-container">
+          <!-- Dynamisch gevuld -->
+        </div>
+        <p class="status mt-3">
+          Tip: klik op de header van een operation om de statuscode‑instellingen te tonen of te verbergen.
+        </p>
+      </div>
+    </section>
+
+    <!-- Stap 3 -->
+    <section class="panel" aria-labelledby="step3-title">
+      <div class="panel-header">
+        <h2 id="step3-title" class="panel-title">
+          Stap 3: Bijwerken, bewerken en downloaden
+        </h2>
+      </div>
+      <div class="panel-content space-y-3">
+        <div class="flex flex-wrap gap-3">
+          <button id="enhanceBtn" class="btn btn-primary" disabled>
+            Swagger bijwerken
+          </button>
+          <button id="downloadBtn" class="btn btn-accent" disabled>
+            Download bijgewerkte Swagger
+          </button>
+          <button id="resetBtn" class="btn btn-outline">Reset</button>
+        </div>
+        <p class="status">
+          De preview hieronder is bewerkbaar. Wijzigingen in deze editor worden
+          gebruikt bij het opnieuw verrijken en bij de download.
+        </p>
+        <label for="editor" class="font-medium mt-1 block"
+          >Preview (JSON)</label
+        >
+        <div id="editor"></div>
+        <p class="footnote">
+          Let op: de Tailwind Play CDN is bedoeld voor ontwikkeling en
+          prototyping. Voor productie: bouw een geoptimaliseerde Tailwind CSS
+          met alleen benodigde classes (JIT/purge) om performance te
+          verbeteren.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Help/Info Modal -->
+  <div id="modalBackdrop" class="modal-backdrop hidden"></div>
+  <div
+    id="helpModal"
+    class="modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="helpTitle"
+  >
+    <div class="modal-content">
+      <h3 id="helpTitle" class="modal-title">Info & Help</h3>
+      <div class="modal-body">
+        <p>
+          Deze tool voegt automatisch de RFC7807-definition toe en de door jou
+          geselecteerde HTTP‑statuscodes aan een Mendix Swagger (OpenAPI 2.0).
+        </p>
+        <ol class="list-decimal pl-5 space-y-1">
+          <li>
+            Upload je Swagger‑bestand (JSON) via “Bestand kiezen” of sleep het
+            in de dropzone.
+          </li>
+          <li>
+            Voor elke operation zie je welke statuscodes nu aanwezig zijn; pas
+            deze per operation aan via de vinkjes.
+          </li>
+          <li>
+            Klik “Swagger bijwerken”; de preview (Ace editor) wordt bijgewerkt
+            met de nieuwe Swagger.
+          </li>
+          <li>
+            Je kunt de JSON in de preview handmatig bewerken; bij opnieuw
+            verrijken en bij download wordt de aangepaste versie gebruikt.
+          </li>
+        </ol>
+      </div>
+      <div class="mt-4 flex gap-2 justify-end">
+        <button id="closeModalBtn" class="btn btn-primary" type="button">
+          Sluiten
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // RFC7807 definition
+    const rfc7807Definition = {
+      RFC7807ProblemResultType: {
+        type: "object",
+        properties: {
+          type: {
+            type: "string",
+            description:
+              "An URI-reference [RFC3986] that identifies the problem type, with human readable documentation. If no URI is available, about:blank is returned.",
+          },
+          title: {
+            type: "string",
+            description:
+              "HTTP Status code error containing information (based on RFC7807)",
+          },
+          status: {
+            type: "integer",
+            format: "int32",
+            description: "The HTTP status code for the problem.",
+          },
+          detail: {
+            type: "string",
+            description: "Details about the problem.",
+          },
+          instance: {
+            type: "string",
+            description:
+              "A URI reference that identifies the specific occurrence of the problem",
+          },
+        },
+        required: ["type", "title", "status"],
+      },
+    };
+
+    // Response templates
+    const responseTemplates = {
+      200: { description: "successful operation", schema: { type: "object" } },
+      201: {
+        description: "Resource created successfully",
+        schema: { type: "object" },
+        examples: {
+          "application/json": { message: "Resource created successfully" },
+        },
+      },
+      204: { description: "No Content" },
+      400: {
+        description: "Bad Request",
+        schema: { $ref: "#/definitions/RFC7807ProblemResultType" },
+        examples: {
+          "application/problem+json": {
+            type: "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1",
+            title: "Bad Request",
+            status: 400,
+          },
+        },
+      },
+      401: {
+        description: "Unauthorized",
+        schema: { $ref: "#/definitions/RFC7807ProblemResultType" },
+        examples: {
+          "application/problem+json": {
+            type: "https://datatracker.ietf.org/doc/html/rfc7235#section-3.1",
+            title: "Unauthorized",
+            status: 401,
+          },
+        },
+      },
+      403: {
+        description: "Forbidden",
+        schema: { $ref: "#/definitions/RFC7807ProblemResultType" },
+        examples: {
+          "application/problem+json": {
+            type: "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.3",
+            title: "Forbidden",
+            status: 403,
+          },
+        },
+      },
+      404: {
+        description: "Not Found",
+        schema: { $ref: "#/definitions/RFC7807ProblemResultType" },
+        examples: {
+          "application/problem+json": {
+            type: "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.4",
+            title: "Not Found",
+            status: 404,
+          },
+        },
+      },
+      422: {
+        description: "Unprocessable Entity",
+        schema: { $ref: "#/definitions/RFC7807ProblemResultType" },
+        examples: {
+          "application/problem+json": {
+            type: "https://datatracker.ietf.org/doc/html/rfc4918#section-11.2",
+            title: "Unprocessable Entity",
+            status: 422,
+          },
+        },
+      },
+      500: {
+        description: "Internal Server Error",
+        schema: { $ref: "#/definitions/RFC7807ProblemResultType" },
+        examples: {
+          "application/problem+json": {
+            type: "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
+            title: "Internal Server Error",
+            status: 500,
+          },
+        },
+      },
+      503: {
+        description: "Service Unavailable",
+        schema: { $ref: "#/definitions/RFC7807ProblemResultType" },
+        examples: {
+          "application/problem+json": {
+            type: "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.4",
+            title: "Service Unavailable",
+            status: 503,
+          },
+        },
+      },
+    };
+
+    let originalSwagger = null;
+    let enhancedSwagger = null;
+
+    const fileInput   = document.getElementById("fileInput");
+    const fileInfo    = document.getElementById("fileInfo");
+    const enhanceBtn  = document.getElementById("enhanceBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const resetBtn    = document.getElementById("resetBtn");
+    const statusEl    = document.getElementById("status");
+    const operationsContainer = document.getElementById("operationsContainer");
+
+    // Ace editor initialiseren
+    const editor = ace.edit("editor");
+    editor.setTheme("ace/theme/textmate");
+    editor.session.setMode("ace/mode/json");
+    editor.setValue("// Preview van Swagger verschijnt hier na upload...", -1);
+    editor.setOption("showPrintMargin", false);
+    editor.setOption("tabSize", 2);
+    editor.setOption("useSoftTabs", true);
+
+    // Help modal
+    const helpBtn        = document.getElementById("helpBtn");
+    const helpModal      = document.getElementById("helpModal");
+    const modalBackdrop  = document.getElementById("modalBackdrop");
+    const closeModalBtn  = document.getElementById("closeModalBtn");
+
+    function openModal() {
+      helpModal.classList.remove("hidden");
+      modalBackdrop.classList.remove("hidden");
+    }
+    function closeModal() {
+      helpModal.classList.add("hidden");
+      modalBackdrop.classList.add("hidden");
+    }
+    helpBtn.addEventListener("click", openModal);
+    modalBackdrop.addEventListener("click", closeModal);
+    closeModalBtn?.addEventListener("click", closeModal);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeModal();
+    });
+
+    // Upload UX: klik-knop + drag & drop
+    const uploadArea = document.getElementById("uploadArea");
+    const browseBtn  = document.getElementById("browseBtn");
+    browseBtn.addEventListener("click", () => fileInput.click());
+
+    ["dragenter", "dragover"].forEach((evt) => {
+      uploadArea.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadArea.classList.add("border-[var(--color-enexis-pink)]");
+      });
+    });
+    ["dragleave", "drop"].forEach((evt) => {
+      uploadArea.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadArea.classList.remove("border-[var(--color-enexis-pink)]");
+      });
+    });
+    uploadArea.addEventListener("drop", (e) => {
+      const dt = e.dataTransfer;
+      if (dt?.files?.length) {
+        fileInput.files = dt.files;
+        const changeEvent = new Event("change");
+        fileInput.dispatchEvent(changeEvent);
+      }
+    });
+
+    function methodClass(method) {
+      const m = method.toLowerCase();
+      if (m === "get")    return "op-method op-method-get";
+      if (m === "post")   return "op-method op-method-post";
+      if (m === "put")    return "op-method op-method-put";
+      if (m === "patch")  return "op-method op-method-patch";
+      if (m === "delete") return "op-method op-method-delete";
+      return "op-method op-method-other";
+    }
+
+    function buildOperationsUI(swaggerJson) {
+      operationsContainer.innerHTML = "";
+      if (!swaggerJson.paths) {
+        operationsContainer.innerHTML =
+          '<p class="status">Geen paths gevonden in deze Swagger.</p>';
+        return;
+      }
+
+      const methods = ["get", "post", "put", "patch", "delete", "options", "head"];
+
+      Object.entries(swaggerJson.paths).forEach(([path, pathItem]) => {
+        methods.forEach((method) => {
+          const op = pathItem[method];
+          if (!op) return;
+
+          const opKey = `${method.toUpperCase()} ${path}`;
+          const responses = (op.responses && Object.keys(op.responses)) || [];
+
+          const opCard = document.createElement("div");
+          opCard.className = "op-card";
+
+          const header = document.createElement("div");
+          header.className = "op-header";
+
+          const left = document.createElement("div");
+          left.className = "flex flex-col gap-1";
+
+          const titleRow = document.createElement("div");
+          titleRow.className = "flex items-center gap-2";
+          const methodBadge = document.createElement("span");
+          methodBadge.className = methodClass(method);
+          methodBadge.textContent = method.toUpperCase();
+          const opTitle = document.createElement("span");
+          opTitle.className = "op-title";
+          opTitle.textContent = path;
+
+          titleRow.appendChild(methodBadge);
+          titleRow.appendChild(opTitle);
+
+          const opPath = document.createElement("div");
+          opPath.className = "op-path";
+          opPath.textContent = op.summary || op.description || "";
+
+          left.appendChild(titleRow);
+          if (opPath.textContent) left.appendChild(opPath);
+
+          const toggleIcon = document.createElement("span");
+          toggleIcon.className = "text-xs text-[var(--color-muted-fg)]";
+          toggleIcon.textContent = "▶";
+
+          header.appendChild(left);
+          header.appendChild(toggleIcon);
+
+          const body = document.createElement("div");
+          body.className = "op-body";
+          body.dataset.opKey = opKey;
+
+          const codesGrid = document.createElement("div");
+          codesGrid.className = "op-codes-grid";
+
+          const allCodes = ["200","201","204","400","401","403","404","422","500","503"];
+
+          allCodes.forEach((code) => {
+            const row = document.createElement("div");
+            row.className = "checkbox-row";
+
+            const input = document.createElement("input");
+            input.type = "checkbox";
+            input.className = "op-code-checkbox accent-[var(--color-enexis-pink)]";
+            input.dataset.opKey = opKey;
+            input.value = code;
+
+            if (responses.includes(code)) {
+              input.checked = true;
+            }
+
+            const label = document.createElement("label");
+            label.textContent = code;
+
+            row.appendChild(input);
+            row.appendChild(label);
+
+            codesGrid.appendChild(row);
+          });
+
+          body.appendChild(codesGrid);
+
+          header.addEventListener("click", () => {
+            const visible = body.classList.contains("visible");
+            document
+              .querySelectorAll(".op-body.visible")
+              .forEach((el) => el.classList.remove("visible"));
+            if (!visible) body.classList.add("visible");
+          });
+
+          opCard.appendChild(header);
+          opCard.appendChild(body);
+          operationsContainer.appendChild(opCard);
+        });
+      });
+
+      if (!operationsContainer.children.length) {
+        operationsContainer.innerHTML =
+          '<p class="status">Geen operations gevonden in deze Swagger.</p>';
+      }
+    }
+
+    function getSelectedCodesForOperation(opKey) {
+      return Array.from(
+        document.querySelectorAll(`.op-code-checkbox[data-op-key="${opKey}"]`)
+      )
+        .filter((cb) => cb.checked)
+        .map((cb) => cb.value);
+    }
+
+    function getUnselectedCodesForOperation(opKey) {
+      return Array.from(
+        document.querySelectorAll(`.op-code-checkbox[data-op-key="${opKey}"]`)
+      )
+        .filter((cb) => !cb.checked)
+        .map((cb) => cb.value);
+    }
+
+    function ensureDefinitions(sw) {
+      if (!sw.definitions) sw.definitions = {};
+      if (!sw.definitions.RFC7807ProblemResultType) {
+        sw.definitions = { ...sw.definitions, ...rfc7807Definition };
+      }
+    }
+
+    function enhanceResponsesForOperation(op, selectedCodes, unselectedCodes) {
+      if (!op.responses) op.responses = {};
+
+      selectedCodes.forEach((code) => {
+        const template = responseTemplates[code];
+        if (template) {
+          op.responses[code] = JSON.parse(JSON.stringify(template));
+        }
+      });
+
+      unselectedCodes.forEach((code) => {
+        if (op.responses[code] !== undefined) {
+          delete op.responses[code];
+        }
+      });
+
+      return op;
+    }
+
+    function enhanceSwagger(sw) {
+      const out = JSON.parse(JSON.stringify(sw));
+      ensureDefinitions(out);
+
+      if (out.paths && typeof out.paths === "object") {
+        Object.entries(out.paths).forEach(([pathKey, pathItem]) => {
+          ["get","post","put","patch","delete","options","head"].forEach(
+            (method) => {
+              const op = pathItem[method];
+              if (!op) return;
+
+              const opKey = `${method.toUpperCase()} ${pathKey}`;
+              const selectedCodes   = getSelectedCodesForOperation(opKey);
+              const unselectedCodes = getUnselectedCodesForOperation(opKey);
+
+              pathItem[method] = enhanceResponsesForOperation(
+                op,
+                selectedCodes,
+                unselectedCodes
+              );
+            }
+          );
+        });
+      }
+      return out;
+    }
+
+    fileInput.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      enhancedSwagger = null;
+      statusEl.textContent = "";
+      operationsContainer.innerHTML = "";
+      editor.setValue("// Preview van Swagger verschijnt hier na upload...", -1);
+
+      if (!file) {
+        fileInfo.textContent = "Geen bestand geselecteerd.";
+        enhanceBtn.disabled = true;
+        downloadBtn.disabled = true;
+        return;
+      }
+      fileInfo.textContent = `Geselecteerd: ${file.name} (${
+        file.type || "onbekend type"
+      })`;
+
+      try {
+        const text = await file.text();
+        const json = JSON.parse(text);
+
+        if (!json.swagger || json.swagger !== "2.0") {
+          statusEl.textContent =
+            "Let op: Dit lijkt geen Swagger 2.0 (OpenAPI 2.0) bestand te zijn.";
+        } else {
+          statusEl.textContent = "Swagger 2.0 gedetecteerd.";
+        }
+
+        originalSwagger = json;
+        buildOperationsUI(json);
+        editor.setValue(JSON.stringify(json, null, 2), -1);
+
+        enhanceBtn.disabled = false;
+        downloadBtn.disabled = true;
+      } catch (err) {
+        originalSwagger = null;
+        statusEl.textContent =
+          "Kon het JSON-bestand niet parsen. Controleer of het geldige JSON is.";
+        enhanceBtn.disabled = true;
+        downloadBtn.disabled = true;
+      }
+    });
+
+    enhanceBtn.addEventListener("click", () => {
+      try {
+        const currentJson = JSON.parse(editor.getValue());
+        enhancedSwagger = enhanceSwagger(currentJson);
+        editor.setValue(JSON.stringify(enhancedSwagger, null, 2), -1);
+        statusEl.textContent =
+          "Swagger succesvol bijgewerkt. Controleer de preview en download indien akkoord.";
+        downloadBtn.disabled = false;
+      } catch {
+        statusEl.textContent =
+          "Fout bij verwerken: JSON in de preview is ongeldig.";
+        downloadBtn.disabled = true;
+      }
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      try {
+        const jsonToDownload = JSON.parse(editor.getValue());
+        const blob = new Blob([JSON.stringify(jsonToDownload, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        const name = (fileInput.files[0]?.name || "swagger.json").replace(
+          /\.json$/i,
+          ""
+        );
+        a.download = `${name}-enhanced.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch {
+        statusEl.textContent =
+          "Download mislukt: JSON in de preview is ongeldig.";
+      }
+    });
+
+    resetBtn.addEventListener("click", () => {
+      originalSwagger = null;
+      enhancedSwagger = null;
+      fileInput.value = "";
+      fileInfo.textContent = "";
+      statusEl.textContent = "";
+      enhanceBtn.disabled = true;
+      downloadBtn.disabled = true;
+      operationsContainer.innerHTML = "";
+      editor.setValue("// Preview van Swagger verschijnt hier na upload...", -1);
+    });
+  </script>
+</body>
+</html>
