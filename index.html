@@ -1,11 +1,13 @@
 <!doctype html>
 <html lang="nl">
+
 <head>
   <meta charset="utf-8" />
   <title>Swagger Enhancer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.3/ace.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.3/ace.js" crossorigin="anonymous"
+    referrerpolicy="no-referrer"></script>
   <style type="text/tailwindcss">
     @theme {
       --color-enexis-pink: #DE0073;
@@ -142,6 +144,7 @@
     }
   </style>
 </head>
+
 <body class="min-h-dvh bg-[var(--color-bg)] text-[var(--color-fg)] font-[var(--font-sans)]">
   <main class="max-w-[1040px] mx-auto p-7 space-y-6">
     <header class="flex items-center justify-between gap-4 mb-3">
@@ -150,12 +153,7 @@
           Swagger Enhancer
         </h1>
       </div>
-      <button
-        id="helpBtn"
-        class="btn-icon"
-        aria-label="Info en hulp"
-        type="button"
-      >
+      <button id="helpBtn" class="btn-icon" aria-label="Info en hulp" type="button">
         ?
       </button>
     </header>
@@ -178,12 +176,7 @@
           <button id="browseBtn" class="btn btn-primary" type="button">
             Bestand kiezen
           </button>
-          <input
-            type="file"
-            id="fileInput"
-            accept=".json,application/json"
-            class="hidden-input"
-          />
+          <input type="file" id="fileInput" accept=".json,application/json" class="hidden-input" />
         </div>
         <div id="fileInfo" class="file-info mt-2"></div>
       </div>
@@ -200,7 +193,7 @@
           Per operation kun je aangeven welke HTTP‑statuscodes aanwezig moeten zijn.
         </p>
         <div id="operationsContainer" class="op-container">
-          </div>
+        </div>
         <p class="footnote mt-3">
           Tip: klik op de header van een operation om de statuscode‑instellingen te tonen of te verbergen.
         </p>
@@ -218,6 +211,9 @@
           <button id="downloadBtn" class="btn btn-accent">
             Download Swagger
           </button>
+          <button id="copyBtn" class="btn btn-outline">
+            Kopieer JSON
+          </button>
         </div>
         <p class="footnote">
           De preview hieronder is bewerkbaar. Na elke wijziging in de
@@ -233,13 +229,7 @@
   </main>
 
   <div id="modalBackdrop" class="modal-backdrop"></div>
-  <div
-    id="helpModal"
-    class="modal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="helpTitle"
-  >
+  <div id="helpModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="modal-content">
       <h3 id="helpTitle" class="modal-title">Info & Help</h3>
       <div class="modal-body">
@@ -265,18 +255,13 @@
   </div>
 
   <div id="errorBackdrop" class="modal-backdrop"></div>
-  <div
-    id="errorModal"
-    class="modal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="errorTitle"
-  >
+  <div id="errorModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="errorTitle">
     <div class="modal-content">
       <h3 id="errorTitle" class="modal-title">Fout in JSON</h3>
       <div class="modal-body">
         <p>De JSON is ongeldig. Details:</p>
-        <pre id="errorMessage" class="text-xs bg-[var(--color-muted)] p-2 rounded border border-[var(--color-border)] whitespace-pre-wrap"></pre>
+        <pre id="errorMessage"
+          class="text-xs bg-[var(--color-muted)] p-2 rounded border border-[var(--color-border)] whitespace-pre-wrap"></pre>
       </div>
       <div class="mt-4 flex gap-2 justify-end">
         <button id="closeErrorBtn" class="btn btn-primary" type="button">
@@ -410,8 +395,8 @@
       },
     };
 
-    const fileInput   = document.getElementById("fileInput");
-    const fileInfo    = document.getElementById("fileInfo");
+    const fileInput = document.getElementById("fileInput");
+    const fileInfo = document.getElementById("fileInfo");
     const downloadBtn = document.getElementById("downloadBtn");
     const operationsContainer = document.getElementById("operationsContainer");
 
@@ -425,8 +410,8 @@
     editor.setOption("useSoftTabs", true);
 
     // Help modal
-    const helpBtn       = document.getElementById("helpBtn");
-    const helpModal     = document.getElementById("helpModal");
+    const helpBtn = document.getElementById("helpBtn");
+    const helpModal = document.getElementById("helpModal");
     const modalBackdrop = document.getElementById("modalBackdrop");
     const closeModalBtn = document.getElementById("closeModalBtn");
 
@@ -444,8 +429,8 @@
 
     // Error modal
     const errorBackdrop = document.getElementById("errorBackdrop");
-    const errorModal    = document.getElementById("errorModal");
-    const errorMessage  = document.getElementById("errorMessage");
+    const errorModal = document.getElementById("errorModal");
+    const errorMessage = document.getElementById("errorMessage");
     const closeErrorBtn = document.getElementById("closeErrorBtn");
 
     function showErrorModal(message) {
@@ -472,7 +457,7 @@
 
     // Upload UX
     const uploadArea = document.getElementById("uploadArea");
-    const browseBtn  = document.getElementById("browseBtn");
+    const browseBtn = document.getElementById("browseBtn");
 
     browseBtn.addEventListener("click", () => fileInput.click());
 
@@ -501,10 +486,10 @@
 
     function methodClass(method) {
       const m = method.toLowerCase();
-      if (m === "get")    return "op-method op-method-get";
-      if (m === "post")   return "op-method op-method-post";
-      if (m === "put")    return "op-method op-method-put";
-      if (m === "patch")  return "op-method op-method-patch";
+      if (m === "get") return "op-method op-method-get";
+      if (m === "post") return "op-method op-method-post";
+      if (m === "put") return "op-method op-method-put";
+      if (m === "patch") return "op-method op-method-patch";
       if (m === "delete") return "op-method op-method-delete";
       return "op-method op-method-other";
     }
@@ -557,13 +542,13 @@
 
       if (out.paths && typeof out.paths === "object") {
         Object.entries(out.paths).forEach(([pathKey, pathItem]) => {
-          ["get","post","put","patch","delete","options","head"].forEach(
+          ["get", "post", "put", "patch", "delete", "options", "head"].forEach(
             (method) => {
               const op = pathItem[method];
               if (!op) return;
 
               const opKey = `${method.toUpperCase()} ${pathKey}`;
-              const selectedCodes   = getSelectedCodesForOperation(opKey);
+              const selectedCodes = getSelectedCodesForOperation(opKey);
               const unselectedCodes = getUnselectedCodesForOperation(opKey);
 
               pathItem[method] = enhanceResponsesForOperation(
@@ -638,7 +623,7 @@
           const codesGrid = document.createElement("div");
           codesGrid.className = "op-codes-grid";
 
-          const allCodes = ["200","201","204","400","401","403","404","422","500","503"];
+          const allCodes = ["200", "201", "204", "400", "401", "403", "404", "422", "500", "503"];
 
           allCodes.forEach((code) => {
             const row = document.createElement("div");
@@ -667,13 +652,13 @@
 
           header.addEventListener("click", () => {
             const visible = body.classList.contains("visible");
-            
+
             // Sluit andere open items en reset pijltjes
             document.querySelectorAll(".op-body.visible").forEach((el) => {
-                if(el !== body) {
-                    el.classList.remove("visible");
-                    el.previousElementSibling.querySelector(".toggle-icon").classList.remove("rotated");
-                }
+              if (el !== body) {
+                el.classList.remove("visible");
+                el.previousElementSibling.querySelector(".toggle-icon").classList.remove("rotated");
+              }
             });
 
             // Toggle huidige item
@@ -693,9 +678,9 @@
             if (ev.target && ev.target.classList.contains("op-code-checkbox")) {
               try {
                 const currentJson = JSON.parse(editor.getValue());
-                const newSwagger  = enhanceSwagger(currentJson);
+                const newSwagger = enhanceSwagger(currentJson);
                 editor.setValue(JSON.stringify(newSwagger, null, 2), -1);
-                
+
                 // Opnieuw focussen op het gewijzigde deel
                 editor.find(`"${path}"`);
               } catch (err) {
@@ -741,55 +726,68 @@
       }
     });
 
-// Download fix voor Iframes (o.a. Confluence)
-downloadBtn.addEventListener("click", () => {
-  try {
-    const jsonToDownload = JSON.parse(editor.getValue());
-    const jsonString = JSON.stringify(jsonToDownload, null, 2);
-    const originalName = fileInput.files[0]?.name || "swagger.json";
-    const newName = originalName.replace(/\.json$/i, "") + "-enhanced.json";
+    const copyBtn = document.getElementById("copyBtn");
 
-    // Stap 1: Maak de blob aan
-    const blob = new Blob([jsonString], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-
-    // Stap 2: Open een tijdelijk leeg venster
-    // Dit haalt de actie uit de gesandboxte iframe context
-    const tempWin = window.open("", "_blank");
-
-    if (!tempWin) {
-      alert("Popup geblokkeerd! Sta popups toe voor deze site om de download te starten.");
-      return;
+    // 1. Logica om de downloadknop te hiden via URL: ?hideDownload=true
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('hideDownload') === 'true') {
+      downloadBtn.style.display = 'none';
     }
 
-    // Stap 3: Schrijf een mini-script in het nieuwe venster dat de download triggert en sluit
-    tempWin.document.write(`
-      <html>
-        <body>
-          <script>
-            const a = document.createElement('a');
-            a.href = '${url}';
-            a.download = '${newName}';
-            document.body.appendChild(a);
-            a.click();
-            
-            // Sluit het venster bijna direct na de klik
-            setTimeout(() => {
-              window.close();
-            }, 100);
-          <\/script>
-        </body>
-      </html>
-    `);
-    tempWin.document.close();
+    // 2. De originele download code (zoals gevraagd)
+    downloadBtn.addEventListener("click", () => {
+      try {
+        const jsonToDownload = JSON.parse(editor.getValue());
+        const content = JSON.stringify(jsonToDownload, null, 2);
+        const blob = new Blob([content], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
 
-    // Stap 4: Ruim de URL op in het hoofdscherm na een tijdje
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
+        // Probeer eerst normale download (werkt buiten iframe)
+        const a = document.createElement("a");
+        a.href = url;
+        const name = (fileInput.files[0]?.name || "swagger.json").replace(/\.json$/i, "");
+        a.download = `${name}-enhanced.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        // Fallback: open in nieuw tabblad
+        try {
+          const jsonToDownload = JSON.parse(editor.getValue());
+          const content = JSON.stringify(jsonToDownload, null, 2);
+          const blob = new Blob([content], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          window.open(url, "_blank");
+        } catch (err2) {
+          showErrorModal(
+            "Download mislukt, JSON is ongeldig:\n\n" + (err2.message || String(err2))
+          );
+        }
+      }
+    });
+    // 3. De nieuwe Kopieer-functie
+    copyBtn.addEventListener("click", () => {
+      try {
+        const content = editor.getValue();
+        // Check of het valide JSON is voor we kopiëren
+        JSON.parse(content);
 
-  } catch (err) {
-    showErrorModal("Download mislukt, JSON is ongeldig:\n\n" + (err.message || String(err)));
-  }
-});
+        navigator.clipboard.writeText(content).then(() => {
+          const originalText = copyBtn.textContent;
+          copyBtn.textContent = "Gekopieerd!";
+          copyBtn.classList.replace("btn-outline", "btn-primary");
+
+          setTimeout(() => {
+            copyBtn.textContent = originalText;
+            copyBtn.classList.replace("btn-primary", "btn-outline");
+          }, 2000);
+        });
+      } catch (err) {
+        showErrorModal("Kopiëren mislukt, JSON is ongeldig.");
+      }
+    });
   </script>
 </body>
+
 </html>
