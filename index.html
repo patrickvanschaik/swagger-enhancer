@@ -767,24 +767,37 @@
       }
     });
 
-    // Nieuwe standaard kopieer-actie (zonder navigator.clipboard)
+    // Nieuwe standaard kopieer-actie zonder scrollen
     copyBtn.addEventListener("click", () => {
       try {
         const content = editor.getValue();
 
-        // Optioneel: check of het geldige JSON is
+        // Optioneel: controleer of het geldige JSON is
         JSON.parse(content);
+
+        // Scrollpositie bewaren
+        const scrollX = window.scrollX;
+        const scrollY = window.scrollY;
 
         // Verborgen textarea maken
         const textarea = document.createElement("textarea");
         textarea.value = content;
-        textarea.style.position = "fixed";
-        textarea.style.top = "-1000px";
-        textarea.style.left = "-1000px";
+
+        // Zo "onzichtbaar" mogelijk, buiten de layout
+        textarea.style.position = "absolute";
+        textarea.style.opacity = "0";
+        textarea.style.pointerEvents = "none";
+        textarea.style.left = "-9999px";
+        textarea.style.top = "0";
+
         textarea.setAttribute("readonly", "");
         document.body.appendChild(textarea);
 
-        textarea.focus();
+        // Alleen selecteren, geen focus verplaatsen
+        // (focus op de actieve element laten staan voorkomt scroll)
+        const selection = document.getSelection();
+        const originalRange = selection.rangeCount ? selection.getRangeAt(0) : null;
+
         textarea.select();
 
         let success = false;
@@ -794,7 +807,17 @@
           success = false;
         }
 
+        // Selectie herstellen
+        selection.removeAllRanges();
+        if (originalRange) {
+          selection.addRange(originalRange);
+        }
+
+        // Element verwijderen
         document.body.removeChild(textarea);
+
+        // Scrollpositie herstellen
+        window.scrollTo(scrollX, scrollY);
 
         if (success) {
           const originalText = copyBtn.textContent;
