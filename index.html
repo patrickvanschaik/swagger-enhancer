@@ -741,29 +741,38 @@
       }
     });
 
-    // Download
-    downloadBtn.addEventListener("click", () => {
-      try {
-        const jsonToDownload = JSON.parse(editor.getValue());
-        const blob = new Blob([JSON.stringify(jsonToDownload, null, 2)], {
-          type: "application/json",
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        const name = (fileInput.files[0]?.name || "swagger.json").replace(
-          /\.json$/i,
-          ""
-        );
-        a.download = `${name}-enhanced.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } catch (err) {
-        showErrorModal("Download mislukt, JSON is ongeldig:\n\n" + (err.message || String(err)));
-      }
-    });
+// Download
+downloadBtn.addEventListener("click", (e) => {
+  e.preventDefault(); // Voorkom eventuele default acties
+  try {
+    const jsonToDownload = JSON.parse(editor.getValue());
+    const jsonString = JSON.stringify(jsonToDownload, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement("a");
+    a.style.display = "none"; // Onzichtbaar maar aanwezig
+    a.href = url;
+    
+    const originalName = fileInput.files[0]?.name || "swagger.json";
+    const newName = originalName.replace(/\.json$/i, "") + "-enhanced.json";
+    
+    a.download = newName;
+    document.body.appendChild(a);
+    
+    // Forceer de klik
+    a.click();
+    
+    // Ruim direct op
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+    
+  } catch (err) {
+    showErrorModal("Download mislukt, JSON is ongeldig:\n\n" + (err.message || String(err)));
+  }
+});
   </script>
 </body>
 </html>
