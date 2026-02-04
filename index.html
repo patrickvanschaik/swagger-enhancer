@@ -766,14 +766,37 @@
         }
       }
     });
-    // 3. De nieuwe Kopieer-functie
+
+    // Nieuwe standaard kopieer-actie (zonder navigator.clipboard)
     copyBtn.addEventListener("click", () => {
       try {
         const content = editor.getValue();
-        // Check of het valide JSON is voor we kopiëren
+
+        // Optioneel: check of het geldige JSON is
         JSON.parse(content);
 
-        navigator.clipboard.writeText(content).then(() => {
+        // Verborgen textarea maken
+        const textarea = document.createElement("textarea");
+        textarea.value = content;
+        textarea.style.position = "fixed";
+        textarea.style.top = "-1000px";
+        textarea.style.left = "-1000px";
+        textarea.setAttribute("readonly", "");
+        document.body.appendChild(textarea);
+
+        textarea.focus();
+        textarea.select();
+
+        let success = false;
+        try {
+          success = document.execCommand("copy");
+        } catch (e) {
+          success = false;
+        }
+
+        document.body.removeChild(textarea);
+
+        if (success) {
           const originalText = copyBtn.textContent;
           copyBtn.textContent = "Gekopieerd!";
           copyBtn.classList.replace("btn-outline", "btn-primary");
@@ -782,7 +805,19 @@
             copyBtn.textContent = originalText;
             copyBtn.classList.replace("btn-primary", "btn-outline");
           }, 2000);
-        });
+        } else {
+          // Fallback: selecteer alles in de editor en geef instructie
+          const session = editor.getSession();
+          const range = session.getDocument().getRange(
+            { row: 0, column: 0 },
+            { row: session.getLength(), column: 0 }
+          );
+          editor.selection.setSelectionRange(range);
+          editor.focus();
+          showErrorModal(
+            "Automatisch kopiëren is geblokkeerd. De volledige JSON is geselecteerd; gebruik Ctrl+C (of Cmd+C) om te kopiëren."
+          );
+        }
       } catch (err) {
         showErrorModal("Kopiëren mislukt, JSON is ongeldig.");
       }
