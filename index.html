@@ -4,6 +4,8 @@
 <head>
   <meta charset="utf-8" />
   <title>Swagger Enhancer</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" href="favicon.png">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.3/ace.js" crossorigin="anonymous"
@@ -147,16 +149,18 @@
 
 <body class="min-h-dvh bg-[var(--color-bg)] text-[var(--color-fg)] font-[var(--font-sans)]">
   <main class="max-w-[1040px] mx-auto p-7 space-y-6">
-    <header class="flex items-center justify-between gap-4 mb-3">
-      <div>
-        <h1 class="text-2xl font-semibold text-[var(--color-enexis-pink)] m-0">
-          Swagger Enhancer
-        </h1>
-      </div>
-      <button id="helpBtn" class="btn-icon" aria-label="Info en hulp" type="button">
-        ?
-      </button>
-    </header>
+<header class="flex items-center justify-between gap-4 mb-3">
+  <div class="flex items-center gap-3">
+    <img
+      src="logo.png"
+      alt="Logo"
+      class="h-16 w-auto"
+    />
+  </div>
+  <button id="helpBtn" class="btn-icon" aria-label="Info en hulp" type="button">
+    ?
+  </button>
+</header>
     <div class="h-1.5 rounded bg-gradient-to-r from-[var(--color-enexis-pink)] to-[var(--color-enexis-green)]"></div>
 
     <section class="panel mt-4" aria-labelledby="step1-title">
