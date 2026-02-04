@@ -741,34 +741,51 @@
       }
     });
 
-// Download
-downloadBtn.addEventListener("click", (e) => {
-  e.preventDefault(); // Voorkom eventuele default acties
+// Download fix voor Iframes (o.a. Confluence)
+downloadBtn.addEventListener("click", () => {
   try {
     const jsonToDownload = JSON.parse(editor.getValue());
     const jsonString = JSON.stringify(jsonToDownload, null, 2);
-    const blob = new Blob([jsonString], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement("a");
-    a.style.display = "none"; // Onzichtbaar maar aanwezig
-    a.href = url;
-    
     const originalName = fileInput.files[0]?.name || "swagger.json";
     const newName = originalName.replace(/\.json$/i, "") + "-enhanced.json";
-    
-    a.download = newName;
-    document.body.appendChild(a);
-    
-    // Forceer de klik
-    a.click();
-    
-    // Ruim direct op
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 100);
-    
+
+    // Stap 1: Maak de blob aan
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    // Stap 2: Open een tijdelijk leeg venster
+    // Dit haalt de actie uit de gesandboxte iframe context
+    const tempWin = window.open("", "_blank");
+
+    if (!tempWin) {
+      alert("Popup geblokkeerd! Sta popups toe voor deze site om de download te starten.");
+      return;
+    }
+
+    // Stap 3: Schrijf een mini-script in het nieuwe venster dat de download triggert en sluit
+    tempWin.document.write(`
+      <html>
+        <body>
+          <script>
+            const a = document.createElement('a');
+            a.href = '${url}';
+            a.download = '${newName}';
+            document.body.appendChild(a);
+            a.click();
+            
+            // Sluit het venster bijna direct na de klik
+            setTimeout(() => {
+              window.close();
+            }, 100);
+          <\/script>
+        </body>
+      </html>
+    `);
+    tempWin.document.close();
+
+    // Stap 4: Ruim de URL op in het hoofdscherm na een tijdje
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+
   } catch (err) {
     showErrorModal("Download mislukt, JSON is ongeldig:\n\n" + (err.message || String(err)));
   }
